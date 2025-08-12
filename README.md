@@ -95,3 +95,39 @@ Outputs:
 - `Data/esm_features/esm_features.csv`
 
 Available models: `esm2_t36_3B_UR50D`, `esm2_t30_150M_UR50D`, `esm2_t12_35M_UR50D`.
+
+4) Train ProjFusNet (Projection Fusion + LSTM)
+
+The training script:
+- loads IDs/labels from `Data/split_dataset/train_set.fasta` and `Data/split_dataset/val_set.fasta`;
+- aligns features by ID from `Data/structure_features/structure_features.csv` and `Data/esm_features/esm_features.csv`;
+- projects different modalities to the same dimension and concatenates them; 
+- performs 5-fold cross validation and writes all artifacts to `Results/experiments/exp_YYYYMMDD_HHMMSS/`.
+
+```bash
+python lstm_fusion_features_model.py
+```
+
+## Script cheat sheet
+
+- `protein_structure_prediction.py`
+  - Inputs: `--sequence` single seq, `--fasta` FASTA, or `--file` CSV with `sequence`.
+  - Key args: `--batch-size`, `--chunk-size`, `--memory-efficient`, `--max-retries`.
+  - Outputs: `Data/structure_local/*.pdb`, plus `Data/results/prediction_metrics.csv` and `prediction_stats.json`.
+
+- `extract_structure_features.py`
+  - Scans `Data/structure_local/*.pdb` and extracts rich 3D structure descriptors using Biopython + DSSP + FreeSASA.
+  - Requires system executables `mkdssp` and `freesasa` in `PATH`.
+  - Outputs: `Data/structure_features/structure_features.csv` and `all_structure_features.pkl`.
+
+- `extract_ESM_features.py`
+  - Uses `fair-esm` ESM-2; mean-pools token representations to obtain a per-sequence embedding.
+  - Outputs: `Data/esm_features/esm_features.pkl` and `esm_features.csv` (`peptide_id` as index).
+
+- `lstm_fusion_features_model.py`
+  - Projects structure + ESM features to a common space and feeds the concatenation to an LSTM classifier.
+  - Runs 5-fold CV and writes results/plots to `Results/experiments/`.
+
+## License
+
+This project is intended for academic research only. Please also follow the licenses of upstream tools/models (ESM-2, ESMFold, DSSP, FreeSASA, etc.).
