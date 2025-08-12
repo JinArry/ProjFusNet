@@ -26,13 +26,13 @@ Results/experiments/             # training outputs (metrics, models, plots)
 Recommended: Python 3.10+ and a virtual environment.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate  # macOS/Linux
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Extra deps used by training and feature extraction
 pip install torch fair-esm biotite scikit-learn seaborn matplotlib networkx python-louvain
 
-# System tools required by structure feature extraction — macOS
+# System tools required by structure feature extraction
 brew install dssp freesasa
 # Verify
 mkdssp --version
@@ -49,3 +49,49 @@ Notes:
 - `merge_train_val.fasta` follows the header convention above.
 - Structure/ESM features are written with `peptide_id` as the index and aligned by ID during training.
 
+## Quick start: from scratch to training
+
+1) Structure prediction (ESMFold)
+
+```bash
+python protein_structure_prediction.py \
+  --fasta Data/split_dataset/merge_train_val.fasta \
+  --output-dir Data/structure_local \
+  --batch-size 1 \
+  --chunk-size 128 \
+  --memory-efficient \
+  --log-file protein_prediction.log
+```
+
+Outputs: `.pdb` files under `Data/structure_local/`, plus metrics under `Data/results/`.
+
+2) Structure feature extraction
+
+Ensure `mkdssp` and `freesasa` are installed (see above). Then run:
+
+```bash
+python extract_structure_features.py
+```
+
+Outputs:
+- `Data/structure_features/structure_features.csv`
+- `Data/structure_features/all_structure_features.pkl`
+
+3) ESM-2 feature extraction
+
+Extract embeddings from a FASTA file. You can pass your merged train/val FASTA.
+
+```bash
+python extract_ESM_features.py \
+  --fasta Data/split_dataset/merge_train_val.fasta \
+  --output_dir Data/esm_features \
+  --model_name esm2_t33_650M_UR50D \
+  --batch_size 1 \
+  --gpu 0
+```
+
+Outputs:
+- `Data/esm_features/esm_features.pkl`
+- `Data/esm_features/esm_features.csv`
+
+Available models: `esm2_t36_3B_UR50D`, `esm2_t30_150M_UR50D`, `esm2_t12_35M_UR50D`.
